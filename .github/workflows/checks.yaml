@@ -1,0 +1,49 @@
+name: "Rust-lang checks"
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+env:
+  CARGO_TERM_COLOR: "always"
+
+jobs:
+  formatting:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - shell: "sh"
+        run: "cargo fmt --check"
+  clippy:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - shell: "sh"
+        run: "cargo clippy"
+  tests:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - shell: "sh"
+        run: "cargo test"
+  miri:
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        target:
+          - "x86_64-unknown-linux-gnu"
+          - "powerpc64-unknown-linux-gnu"
+    env:
+      target: "${{ matrix.target }}"
+    steps:
+      - uses: "actions/checkout@v4"
+      - shell: "sh"
+        run: "rustup toolchain install nightly --profile minimal --component miri --target ${target}"
+      - shell: "sh"
+        run: "cargo +nightly miri setup --target ${target}"
+      - shell: "sh"
+        run: "cargo +nightly miri test --target ${target}"
